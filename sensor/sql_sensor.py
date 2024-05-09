@@ -18,8 +18,8 @@ DATE_COL="ENTER_YOUR_COLUMN_NAME_HERE"
 
 # queries which will be executed by code , change them if you want
 max_val_query="SELECT MAX({date_column}) FROM {table_name}"
-sensor_query="SELECT COUNT(*) FROM {table_name} WHERE {date_column} > '{{ ti.xcom_pull(task_ids='find_last_purchase', key='max_value') }}'"
-operator_query="SELECT * FROM {table_name} WHERE {date_column} > '{{ ti.xcom_pull(task_ids='find_last_purchase', key='max_value') }}'"
+sensor_query="SELECT COUNT(*) FROM {table_name} WHERE {date_column} > '{{ ti.xcom_pull(task_ids='find_last_date', key='max_value') }}'"
+operator_query="SELECT * FROM {table_name} WHERE {date_column} > '{{ ti.xcom_pull(task_ids='find_last_date', key='max_value') }}'"
 
 # defining your database connection ID which you defined in airflow connection tab
 CONN_ID="ENTER_YOUR_CONN_ID"
@@ -29,7 +29,7 @@ def find_max_val(**kwargs):
     conn=ps.connect(host=db_host, port=db_port, user=db_user, password=db_password, database=db_name)
     cur=conn.cursor()
 
-    query=max_val_query.format(table_nam=TABLE,date_column=DATE_COL)
+    query=max_val_query.format(table_name=TABLE,date_column=DATE_COL)
     cur.execute(query)
     max_date=cur.fetchone()
     
@@ -61,7 +61,7 @@ dag = DAG(
 
 # making an operator to find date of latest row inserted into the table
 find_max_date=PythonOperator(
-    task_id="find_last_purchase",
+    task_id="find_last_date",
     python_callable=find_max_val,
     provide_context=True,
     dag=dag,
@@ -72,7 +72,7 @@ find_max_date=PythonOperator(
 shop_insert_sensor = SqlSensor(
     task_id='table_insert_sensor',
     conn_id=CONN_ID,
-    sql=sensor_query.format(table_nam=TABLE,date_column=DATE_COL),
+    sql=sensor_query.format(table_name=TABLE,date_column=DATE_COL),
     mode='poke',
     poke_interval=timedelta(seconds=1),#your sesnor check database every secnod until it finds a new row
     timeout=6000,
@@ -83,7 +83,7 @@ shop_insert_sensor = SqlSensor(
 read_row_from_db=PostgresOperator(
     task_id="read_data_from_db",
     postgres_conn_id=CONN_ID,
-    sql=operator_query.format(table_nam=TABLE,date_column=DATE_COL),
+    sql=operator_query.format(table_name=TABLE,date_column=DATE_COL),
     do_xcom_push=True,
     dag=dag,
 )
