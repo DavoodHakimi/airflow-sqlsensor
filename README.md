@@ -26,3 +26,5 @@ Stack overflow: [add an airflow connection to a localhost database](https://stac
 `DATE_COL`: date column or every column your changes based on
 
 `CONN_ID`: the connection id which you defined in airflow for your databse
+
+This repo will be updated ...
